@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#101114">
+  <meta name="description" content="Личный план учёбы и тренировок на неделю">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <title>Week — мой план</title>
+  <style>
+    :root{color-scheme:dark;--bg:#0d0e11;--panel:#15171c;--panel2:#1b1e25;--line:#292d36;--muted:#9298a5;--text:#f2f3f5;--accent:#a78bfa;--green:#75d6a1;--red:#f08b91}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif}
+    button{font:inherit;color:inherit;cursor:pointer} .app{max-width:760px;margin:auto;padding:24px 18px 60px}
+    header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:22px}
+    .brand{font-weight:750;font-size:20px;letter-spacing:-.6px}.brand span{color:var(--accent)}
+    .date{color:var(--muted);font-size:13px;text-align:right}
+    .hero{background:linear-gradient(135deg,#1d1b2b,#171923 65%);border:1px solid #343044;border-radius:22px;padding:20px;margin-bottom:18px}
+    .eyebrow{font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:#b8a8f4;font-weight:700}
+    h1{font-size:26px;line-height:1.15;margin:8px 0 6px;letter-spacing:-.8px}.sub{color:#b5b7c2;margin:0}
+    .progressline{height:7px;background:#343341;border-radius:20px;overflow:hidden;margin-top:17px}.progressline>div{height:100%;width:0;background:var(--accent);border-radius:20px;transition:width .2s}
+    .progressmeta{display:flex;justify-content:space-between;color:#c3c1cf;font-size:12px;margin-top:8px}
+    .week{display:grid;grid-template-columns:repeat(7,1fr);gap:7px;margin:18px 0 22px}
+    .day{border:1px solid var(--line);background:var(--panel);border-radius:13px;padding:9px 2px;text-align:center;min-width:0}
+    .day .name{display:block;color:var(--muted);font-size:11px}.day .num{display:block;font-weight:700;margin-top:4px}
+    .day.active{background:#29233b;border-color:#7560b0}.day.today:not(.active){border-color:#7560b0}
+    .day .dot{display:block;width:4px;height:4px;background:var(--green);border-radius:50%;margin:5px auto 0;opacity:0}
+    .day.has-progress .dot{opacity:1}
+    .sectionhead{display:flex;justify-content:space-between;align-items:end;margin:0 2px 12px}.sectionhead h2{font-size:17px;margin:0}.sectionhead small{color:var(--muted)}
+    .tasklist{display:flex;flex-direction:column;gap:9px}
+    .task{display:grid;grid-template-columns:54px 1fr 34px;gap:12px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:13px}
+    .time{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+    .tasktitle{font-weight:620}.tasknote{font-size:12px;color:var(--muted);margin-top:3px}
+    .check{width:30px;height:30px;border:1px solid #454b57;background:var(--panel2);border-radius:10px;display:grid;place-items:center;font-size:16px}
+    .task.done{opacity:.58}.task.done .tasktitle{text-decoration:line-through}.task.done .check{background:#20392d;border-color:#397454;color:var(--green)}
+    .empty{padding:24px;text-align:center;color:var(--muted);background:var(--panel);border:1px dashed var(--line);border-radius:16px}
+    .footer{display:flex;justify-content:space-between;gap:10px;margin-top:18px}
+    .secondary{border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:10px 13px;font-size:13px}
+    .hint{font-size:12px;color:var(--muted);margin-top:18px}
+    .modalback{position:fixed;inset:0;background:#0009;display:none;align-items:end;justify-content:center;padding:14px;z-index:5}
+    .modalback.open{display:flex}.modal{width:min(100%,520px);background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:20px}
+    .modal h3{margin:0 0 8px}.modal p{color:var(--muted);font-size:13px}.modal button{margin-top:8px}
+    @media(min-width:620px){.app{padding-top:34px}.task{padding:15px 17px}.week{gap:10px}.day{padding:11px 4px}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">week<span>.</span></div>
+    <div class="date" id="todayLabel"></div>
+  </header>
+  <section class="hero">
+    <div class="eyebrow">Твой недельный ритм</div>
+    <h1 id="headline">План на сегодня</h1>
+    <p class="sub" id="summary">Отмечай выполненное — прогресс сохранится на этом устройстве.</p>
+    <div class="progressline"><div id="progressBar"></div></div>
+    <div class="progressmeta"><span id="progressText">0 из 0 выполнено</span><span id="progressPct">0%</span></div>
+  </section>
+  <nav class="week" id="weekNav" aria-label="Дни недели"></nav>
+  <div class="sectionhead"><h2 id="dayTitle">Сегодня</h2><small id="taskCount"></small></div>
+  <main class="tasklist" id="tasks"></main>
+  <div class="footer">
+    <button class="secondary" id="todayBtn">Вернуться к сегодня</button>
+    <button class="secondary" id="resetBtn">Сбросить день</button>
+  </div>
+  <p class="hint">Отметки хранятся в браузере на этом устройстве. Каждый новый день получает отдельный список отметок.</p>
+</div>
+<div class="modalback" id="modal">
+  <div class="modal">
+    <h3>Сбросить отметки за этот день?</h3>
+    <p>Все задачи выбранного дня снова станут невыполненными. Это действие нельзя отменить.</p>
+    <button class="secondary" id="cancelReset">Отмена</button>
+    <button class="secondary" id="confirmReset">Сбросить отметки</button>
+  </div>
+</div>
+<script>
+const schedule = [
+ {day:0,name:"Пн",title:"Понедельник",tasks:[
+  ["до 15:05","Школа и консультация по истории","Консультация сразу после 8-го урока"],
+  ["15:30–16:15","Обед и отдых","Переключиться после школы"],
+  ["16:15–17:05","Вебинар по истории","Запись курса"],
+  ["17:05–17:30","Закрепление истории","Краткий конспект или задания"],
+  ["18:00–19:00","Итоговое сочинение","Аргументы, план или написание"],
+  ["19:00–19:50","Английский — вебинар","Запись курса"],
+  ["19:50–20:10","Повторение английского","Слова и материал вебинара"]
+ ]},
+ {day:1,name:"Вт",title:"Вторник",tasks:[
+  ["13:30–14:30","Обед и отдых",""],
+  ["14:30–15:20","Обществознание — вебинар","Запись курса"],
+  ["15:20–15:45","Закрепление общества","Конспект и проверка понимания"],
+  ["15:45–16:15","Итоговое сочинение","Аргументы или работа над темой"],
+  ["17:00–18:10","Тренировка",""],
+  ["18:10–19:00","Душ и ужин",""],
+  ["19:00–19:50","Английский — вебинар","Запись курса"]
+ ]},
+ {day:2,name:"Ср",title:"Среда",tasks:[
+  ["13:30–14:30","Обед и отдых",""],
+  ["14:30–15:20","История — вебинар","Запись курса"],
+  ["15:20–15:45","Практика ЕГЭ по истории","Тесты, даты, личности"],
+  ["15:45–16:15","Итоговое сочинение",""],
+  ["17:00–18:10","Тренировка",""],
+  ["18:10–19:00","Душ и ужин",""],
+  ["19:00–19:30","Повторение английского","Слова или материал прошлых вебинаров"]
+ ]},
+ {day:3,name:"Чт",title:"Четверг",tasks:[
+  ["13:30–14:30","Обед и отдых",""],
+  ["14:30–15:20","Обществознание — вебинар","Запись курса"],
+  ["15:20–15:45","Закрепление общества",""],
+  ["15:45–16:30","Практика ЕГЭ по обществу",""],
+  ["17:00–18:15","Итоговое сочинение","Большой блок"],
+  ["18:15–19:00","Ужин и отдых",""],
+  ["19:00–19:50","Английский — вебинар","Запись курса"],
+  ["20:00–20:20","Повторение английского",""]
+ ]},
+ {day:4,name:"Пт",title:"Пятница",tasks:[
+  ["13:30–14:30","Обед и отдых",""],
+  ["14:30–15:15","Практика ЕГЭ по истории",""],
+  ["15:15–15:45","Итоговое сочинение",""],
+  ["16:30–17:40","Тренировка",""],
+  ["17:40–18:30","Душ и ужин",""],
+  ["18:30–19:15","Повторение общества",""]
+ ]},
+ {day:5,name:"Сб",title:"Суббота",tasks:[
+  ["10:00–10:50","История — вебинар","Запись курса"],
+  ["10:50–11:15","Закрепление истории",""],
+  ["12:00–12:50","Обществознание — практика ЕГЭ",""],
+  ["12:50–14:00","Обед и отдых",""],
+  ["14:00–15:15","Полноценное итоговое сочинение","Пробная работа"],
+  ["15:15–15:45","Проверка сочинения","Исправить ошибки"],
+  ["16:00–16:50","Английский — вебинар","Запись курса"]
+ ]},
+ {day:6,name:"Вс",title:"Воскресенье",tasks:[
+  ["10:30–11:00","Повторение истории",""],
+  ["11:00–11:30","Повторение общества",""],
+  ["11:30–12:00","Английские слова",""],
+  ["13:00–13:40","Подготовка к сочинению","Аргументы или план"],
+  ["13:40–14:00","Планирование следующей недели",""]
+ ]}
+];
+const dayNames=["Воскресенье","Понедельник","Вторник","Среда","Четверг","Пятница","Суббота"];
+const $=id=>document.getElementById(id);
+let selected = (new Date().getDay()+6)%7;
+const dateKey=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`};
+const keyFor=(day)=>{let d=new Date();let delta=day-((d.getDay()+6)%7);d.setDate(d.getDate()+delta);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`};
+function getState(key){try{return JSON.parse(localStorage.getItem("week-pwa-"+key)||"{}")}catch{return {}}}
+function saveState(key,state){localStorage.setItem("week-pwa-"+key,JSON.stringify(state))}
+function render(){
+ const now=new Date(), today=(now.getDay()+6)%7, day=schedule[selected], key=keyFor(selected), state=getState(key);
+ $("todayLabel").textContent=now.toLocaleDateString("ru-RU",{day:"numeric",month:"long"});
+ $("headline").textContent=selected===today?"План на сегодня":"План на "+day.title.toLowerCase();
+ $("dayTitle").textContent=selected===today?"Сегодня · "+day.title:day.title;
+ $("weekNav").innerHTML="";
+ schedule.forEach((d,i)=>{
+   const s=getState(keyFor(i)), done=Object.values(s).filter(Boolean).length;
+   const b=document.createElement("button");b.className="day"+(i===selected?" active":"")+(i===today?" today":"")+(done?" has-progress":"");
+   b.innerHTML=`<span class="name">${d.name}</span><span class="num">${new Date(keyFor(i)+"T12:00:00").getDate()}</span><span class="dot"></span>`;
+   b.onclick=()=>{selected=i;render()};$("weekNav").appendChild(b);
+ });
+ const completed=day.tasks.filter((_,i)=>state[i]).length, total=day.tasks.length, pct=total?Math.round(completed/total*100):0;
+ $("progressBar").style.width=pct+"%";$("progressText").textContent=`${completed} из ${total} выполнено`;$("progressPct").textContent=pct+"%";
+ $("taskCount").textContent=`${total} задач`;
+ $("tasks").innerHTML="";
+ day.tasks.forEach(([time,title,note],i)=>{
+   const el=document.createElement("article");el.className="task"+(state[i]?" done":"");
+   const timeEl=document.createElement("div");timeEl.className="time";timeEl.textContent=time;
+   const body=document.createElement("div");const t=document.createElement("div");t.className="tasktitle";t.textContent=title;body.appendChild(t);
+   if(note){const n=document.createElement("div");n.className="tasknote";n.textContent=note;body.appendChild(n)}
+   const btn=document.createElement("button");btn.className="check";btn.setAttribute("aria-label",state[i]?"Отметить невыполненным":"Отметить выполненным");btn.textContent=state[i]?"✓":"";
+   btn.onclick=()=>{const s=getState(key);s[i]=!s[i];saveState(key,s);render()};
+   el.append(timeEl,body,btn);$("tasks").appendChild(el);
+ });
+ if(!total)$("tasks").innerHTML='<div class="empty">На этот день задач нет. Отдыхай ✦</div>';
+}
+$("todayBtn").onclick=()=>{selected=(new Date().getDay()+6)%7;render()};
+$("resetBtn").onclick=()=> $("modal").classList.add("open");
+$("cancelReset").onclick=()=> $("modal").classList.remove("open");
+$("confirmReset").onclick=()=>{localStorage.removeItem("week-pwa-"+keyFor(selected));$("modal").classList.remove("open");render()};
+render();
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));
+</script>
+</body></html>
